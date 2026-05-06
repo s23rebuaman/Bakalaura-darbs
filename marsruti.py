@@ -34,11 +34,11 @@ mydb = mysql.connector.connect(
 
 mycursor = mydb.cursor()
 
-query = "INSERT INTO reisi (reisa_nr, reisa_nosaukums) VALUES (%s, %s)"
+query = "INSERT INTO ventspils_reiss_dati (Marsruta_nr, Reisa_kods, Reisa_nosaukums, Datums_un_laiks, Tab_nr, Autobusa_vaditajs, Gar_nr, Autobusa_nr, Kases_aparats, Bilesu_sk) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
 marsruti = []
 
-with open('ventspils-reiss_marsruti.csv') as csv_file:
+with open('ventspils-reiss-parveidoti-dati.csv') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     line_count = 0
     batch_size = 500 
