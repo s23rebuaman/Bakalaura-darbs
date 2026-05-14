@@ -29,6 +29,6 @@ app = Flask(__name__)
 
 @app.route('/')
 def main():
-    return render_template('file.html')
+    return render_template('data_filter.html')
 
 app.run()
