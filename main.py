@@ -25,7 +25,7 @@
 #     app.run(debug=True)
 
 from flask import Flask, render_template, request
-from flask_sqlalchemy import SQLAlchemy
+import pymysql.cursors
 
 app = Flask(__name__)
 
@@ -44,32 +44,45 @@ def main():
 
     # return render_template('data_result.html', year=year, month=month, day=day, date=date)
 
-db_credentials = {
-    'user': 'root',  
-    'password': 'rootAdmin.2004', 
-    'host': '127.0.0.1',
-    'name': 'ventspils_reiss'  
-}
-app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://\
-{db_credentials['user']}:{db_credentials['password']}@{db_credentials['host']}/\
-{db_credentials['name']}"
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+connection = pymysql.connect(
+    user='root',  
+    password='rootAdmin.2004', 
+    host='localhost',
+    database='ventspils_reiss',
+    cursorclass=pymysql.cursors.DictCursor  
+)
 
-# INITIALIZE DATABASE AFTER CONFIGURATION
-db = SQLAlchemy(app)
 
-# APP ROUTE TO GET RESULTS FOR SELECT QUERY
 @app.route('/query_result', methods=['POST'])
 def get_results():
     year = request.form.get('years')
     month = request.form.get('months')
-    day = request.form.get('days')
+    #day = request.form.get('days')
     date = request.form.get('dates')
-    print(year, month, day, date)
+    start = request.form.get('beginning_hours')
+    end = request.form.get('ending_hours')
 
-    result = db.engine.execute('select Marsruta_nr, Reisa_nosaukums, Datums_un_laiks, count(Bilesu_sk) from info where year(Datums_un_laiks) = 2023 and month(Datums_un_laiks) = 2 and day(Datums_un_laiks) = 2 and Bilesu_sk=(select max(Bilesu_sk))')
-    response = {f'Record {i}': list(each) for i, each in enumerate(result, start=1)}
-    return response
+    with connection:
 
+        with connection.cursor() as cursor:
+            query = """
+            select Marsruta_nr, Reisa_nosaukums, Datums_un_laiks, Bilesu_sk
+            from info
+            where year(Datums_un_laiks) = %s
+            and month(Datums_un_laiks) = %s
+            and day(Datums_un_laiks) = %s
+            and (time(Datums_un_laiks) > %s and time(Datums_un_laiks) < %s)
+            order by Bilesu_sk desc
+            """
+            #query = "SELECT `Marsruta_nr`, count(Bilesu_sk) FROM `info` WHERE year(Datums_un_laiks) = %s"
+            cursor.execute(query, (int(year), int(month), int(date), start, end))
+            #cursor.execute(query, year)
+            result = cursor.fetchall()
+            #print("year: " + year + ", " + "month: " + month + ", " + "date: " + date)
+            #return result
+            return result
 
-app.run()
+        connection.commit()
+
+if __name__ == '__main__':
+    app.run(debug=True)
